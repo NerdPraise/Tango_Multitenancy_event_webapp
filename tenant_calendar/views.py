@@ -22,6 +22,12 @@ class CompanyAPIMixin(mixins.CreateModelMixin):
 
         data['company_i'] = request.user.company_i.pk
 
+        # Help build nested data
+        location = request.data.get('location', None)
+        if location:
+            location['company_i'] = request.user.company_i.pk
+
+        # Serialize data
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -40,9 +46,12 @@ class CalendarAPIView(
         if not self.request.user.is_superuser:
             calendar = Calendar.objects.filter(
                 company_i=self.request.user.company_i)
+            # Get queryset of user event as participant
             qs_1 = calendar.filter(
                 participants__id=self.request.user.id)
+            # Get queryset of user event as host
             qs_2 = calendar.filter(user=self.request.user)
+            # merge the querysets
             calendar = qs_1 | qs_2
         else:
             calendar = Calendar.objects.all()
@@ -59,7 +68,15 @@ class CalendarAPIView(
 class ConferenceRoomAPIView(CompanyAPIMixin,
                             generics.CreateAPIView, generics.ListAPIView):
     serializer_class = ConferenceRoomSerializer
-    queryset = ConferenceRoom.objects.all()
+
+    def get_queryset(self):
+        if not self.request.user.is_superuser:
+            conference_room = ConferenceRoom.objects.filter(
+                company_i=self.request.user.company_i)
+        else:
+            conference_room = ConferenceRoom.objects.all()
+
+        return conference_room
 
 
 class UserAPIView(CompanyAPIMixin, generics.ListAPIView):
