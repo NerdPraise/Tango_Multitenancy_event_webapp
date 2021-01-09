@@ -58,7 +58,6 @@ class CalendarSerializer(serializers.ModelSerializer):
         representation['company_i'] = Company.objects.get(pk=company_i).name
 
         if instance.participants:
-            print(instance.participants.all())
             representation['participants'] = [
                 user.email for user in instance.participants.all()]
         return representation
