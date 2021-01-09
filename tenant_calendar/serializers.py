@@ -3,6 +3,8 @@ from rest_framework.exceptions import ValidationError
 
 from datetime import timedelta
 
+from django.db.utils import IntegrityError
+
 from .models import (
     User, ConferenceRoom, Calendar, Company
 )
@@ -56,12 +58,9 @@ class CalendarSerializer(serializers.ModelSerializer):
         representation['company_i'] = Company.objects.get(pk=company_i).name
 
         if instance.participants:
+            print(instance.participants.all())
             representation['participants'] = [
                 user.email for user in instance.participants.all()]
-        # if instance.location:
-        #     location_id = representation['location']['id']
-        #     representation['location'] = ConferenceRoom.objects.get(
-        #         pk=location_id).name
         return representation
 
     def validate_participants(self, data):
@@ -90,11 +89,15 @@ class CalendarSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         location = validated_data.pop('location', None)
+
         participants = validated_data.pop('participants')
         calendar = Calendar.objects.create(**validated_data)
 
+        calendar.participants.set(participants)
+
         if location:
             try:
+                # Check if the room is in company and assign to event
                 conference = ConferenceRoom.objects.get(
                     name=location['name'], company_i=calendar.company_i)
             except ConferenceRoom.DoesNotExist:
@@ -102,5 +105,11 @@ class CalendarSerializer(serializers.ModelSerializer):
                     {'location': 'This room doesn\'t exist in this company'})
 
             calendar.location = conference
+        try:
             calendar.save()
+        except IntegrityError:
+            # A quick save for multiple booking of the same room
+            # Minimise room availability management
+            raise ValidationError(
+                {'location': 'This room is in use'})
         return calendar
