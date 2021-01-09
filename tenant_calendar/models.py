@@ -48,11 +48,11 @@ class ConferenceRoom(CompanyMixin):
     user = models.OneToOneField(
         'User', on_delete=models.SET_NULL, null=True, verbose_name='Manager')
     name = models.CharField(max_length=30, verbose_name='Conference room')
-    Address = models.TextField()
+    address = models.TextField()
 
 
 class Calendar(CompanyMixin):
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         'User', on_delete=models.CASCADE, verbose_name='Owner',
         related_name='owner')
     event_name = models.CharField(max_length=30, verbose_name='Event name')
@@ -63,3 +63,4 @@ class Calendar(CompanyMixin):
         'User', related_name="participants_list")
     location = models.OneToOneField(
         'ConferenceRoom', on_delete=models.SET_NULL, null=True, blank=True)
+    # created = models.DateTimeField(auto_now_add=True)

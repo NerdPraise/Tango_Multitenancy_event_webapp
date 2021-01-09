@@ -1,6 +1,6 @@
 from rest_framework import status, generics, mixins
 from rest_framework.response import Response
-from django.utils.timezone import timezone
+from django.utils.timezone import timezone, timedelta
 
 from .models import (
     User, ConferenceRoom, Calendar
@@ -14,11 +14,9 @@ class CompanyAPIMixin(mixins.CreateModelMixin, mixins.ListModelMixin):
 
     def create(self, request, *args, **kwargs):
         data = request.data
+        data['user'] = request.data.get('user', request.user.pk)
 
-        if not request.user.is_superuser:
-            data['company_i'] = request.user.company_i
-        else:
-            pass
+        data['company_i'] = request.user.company_i.pk
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -42,6 +40,7 @@ class CompanyAPIMixin(mixins.CreateModelMixin, mixins.ListModelMixin):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
+
         return Response(serializer.data)
 
 
