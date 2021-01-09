@@ -1,6 +1,7 @@
 from rest_framework import status, generics, mixins
 from rest_framework.response import Response
-from django.utils.timezone import timezone, timedelta
+from rest_framework.filters import SearchFilter
+
 
 from .models import (
     User, ConferenceRoom, Calendar
@@ -9,12 +10,15 @@ from .serializers import (
     CalendarSerializer, ConferenceRoomSerializer, UserSerializer)
 
 
-class CompanyAPIMixin(mixins.CreateModelMixin, mixins.ListModelMixin):
+class CompanyAPIMixin(mixins.CreateModelMixin):
     # This could also be implemented with permissions
 
     def create(self, request, *args, **kwargs):
         data = request.data
-        data['user'] = request.data.get('user', request.user.pk)
+        if request.user.is_superuser:
+            data['user'] = request.data.get('user')
+        else:
+            data['user'] = request.user.pk
 
         data['company_i'] = request.user.company_i.pk
 
@@ -25,42 +29,31 @@ class CompanyAPIMixin(mixins.CreateModelMixin, mixins.ListModelMixin):
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
 
-    def list(self, request, *args, **kwargs):
-        # Restrict queryset available in user's company
-        if not request.user.is_superuser:
-            qs = self.get_queryset().filter(company_i=request.user.company_i)
-        else:
-            qs = self.get_queryset()
 
-        queryset = self.filter_queryset(qs)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-
-        return Response(serializer.data)
-
-
-class CalendarAPIView(CompanyAPIMixin,
-                      generics.CreateAPIView, generics.ListAPIView):
+class CalendarAPIView(
+        CompanyAPIMixin, generics.CreateAPIView, generics.ListAPIView):
     serializer_class = CalendarSerializer
-    queryset = Calendar.objects.all()
+    filter_backends = (SearchFilter,)
+    search_fields = ['event_name', 'meeting_agenda']
 
-    # def post(self, *args, **kwargs):
-    #     user = self.request.user
-    #     print(user.username)
-    #     data = self.request.data
-    #     data['user'] = user.pk
-    #     print(data)
+    def get_queryset(self):
+        if not self.request.user.is_superuser:
+            calendar = Calendar.objects.filter(
+                company_i=self.request.user.company_i)
+            qs_1 = calendar.filter(
+                participants__id=self.request.user.id)
+            qs_2 = calendar.filter(user=self.request.user)
+            calendar = qs_1 | qs_2
+        else:
+            calendar = Calendar.objects.all()
+        conf_room = self.request.query_params.get('location_id')
+        day = self.request.query_params.get('day')
+        if day:
+            calendar = calendar.filter(start_time__date=day)
+        if conf_room:
+            calendar = calendar.filter(location__name=conf_room)
 
-    #     serializer = self.get_serializer(data=data)
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     return Response({'message': 'Event created'},
-    #                     status=status.HTTP_201_CREATED)
+        return calendar
 
 
 class ConferenceRoomAPIView(CompanyAPIMixin,

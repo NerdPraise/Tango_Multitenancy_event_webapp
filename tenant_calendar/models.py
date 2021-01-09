@@ -31,7 +31,7 @@ class User(CompanyMixin, AbstractUser):
         max_length=30, verbose_name='time zone')
 
     def __str__(self):
-        return f'{self.full_name}'
+        return f'{self.email}'
 
     def save(self, *args, **kwargs):
         if not self.id:

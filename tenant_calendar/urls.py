@@ -5,14 +5,16 @@ from rest_framework_simplejwt.views import (
 
 from django.urls import path
 from .views import (
-    CalendarAPIView, UserAPIView
+    CalendarAPIView, UserAPIView, ConferenceRoomAPIView
 )
 
 app_name = 'calendar'
 
 urlpatterns = [
-    path('calendar/', CalendarAPIView.as_view(), name='calendar'),
+    path('events/', CalendarAPIView.as_view(), name='calendar'),
     path('user/', UserAPIView.as_view(), name='user-list'),
+    path('conference_room/', ConferenceRoomAPIView.as_view(),
+         name='conference-room'),
 
 
     path('auth/login/', TokenObtainPairView.as_view(),

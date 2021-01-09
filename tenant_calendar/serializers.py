@@ -25,6 +25,15 @@ class ConferenceRoomSerializer(serializers.ModelSerializer):
         model = ConferenceRoom
         fields = '__all__'
 
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #     company_i = representation['company_i']
+    #     representation['company_i'] = Company.objects.get(pk=company_i).name
+    #     if instance.participants:
+    #         representation['participants'] = [
+    #             user.email for user in instance.participants.all()]
+    #     return representation
+
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -36,7 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CalendarSerializer(serializers.ModelSerializer):
     participants = serializers.ListField(write_only=True)
-    location = ConferenceRoomSerializer(read_only=True)
+    # location = ConferenceRoomSerializer(required=False)
     end_time = serializers.DateTimeField()
     start_time = serializers.DateTimeField()
 
@@ -48,9 +57,14 @@ class CalendarSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         company_i = representation['company_i']
         representation['company_i'] = Company.objects.get(pk=company_i).name
+
         if instance.participants:
             representation['participants'] = [
                 user.email for user in instance.participants.all()]
+        if instance.location:
+            location = representation['location']
+            representation['location'] = ConferenceRoom.objects.get(
+                pk=location).name
         return representation
 
     def validate_participants(self, data):
