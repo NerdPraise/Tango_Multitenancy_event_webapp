@@ -41,3 +41,4 @@ valid_conference_data = {
 3. The endpoints are user timezone-aware but not the admin dashboard 
 4. The concept of company tenancy is made abstract to user
 5. No user management api 
+6. Choice of time zones is restricted to common time zone
