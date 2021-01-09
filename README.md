@@ -39,3 +39,5 @@ valid_conference_data = {
 1. Once a room is booked, it can't be booked again, this is to avoid implementing additional business requirements that aren't required
 2. Tenancy system adopted is a shared schema, shared database system
 3. The endpoints are user timezone-aware but not the admin dashboard 
+4. The concept of company tenancy is made abstract to user
+5. No user management api 
