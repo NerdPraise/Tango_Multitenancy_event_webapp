@@ -29,7 +29,7 @@ valid_event_data = {
     }
 
 valid_conference_data = {
-    "name": 'Room A",
+    "name": "Room A",
     "address": "Some place"
 }
 

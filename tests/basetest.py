@@ -10,7 +10,8 @@ ConferenceRoom = apps.get_model('tenant_calendar', 'ConferenceRoom')
 
 
 class CalendarAPITestCase(APITestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         company_i = Company.objects.create(name='Some company')
         ConferenceRoom.objects.create(
             name='Room A', address='some place', company_i=company_i)
@@ -30,6 +31,18 @@ class CalendarAPITestCase(APITestCase):
         user.is_superuser = False
         user.save()
 
+    def setUp(self):
+        # Log in user
+        url = reverse('calendar:token_obtain_pair')
+        response = self.client.post(
+            url, {'username': 'nobody',  'password': 'nobody'}, format='json')
+        access = response.data['access']
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access)
+
     def tearDown(self):
+        self.client.credentials()
+
+    @classmethod
+    def tearDownClass(cls):
         User.objects.filter(email='nobody@nobody.niks').delete()
         User.objects.filter(email='admin@admin.admin').delete()

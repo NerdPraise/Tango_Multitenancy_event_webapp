@@ -1,8 +1,12 @@
 from rest_framework import status
 
 from django.shortcuts import reverse
+from django.contrib.auth import get_user_model
 
 from tests.basetest import CalendarAPITestCase
+
+
+User = get_user_model()
 
 
 class ConferenceTestcase(CalendarAPITestCase):
@@ -32,13 +36,6 @@ class ConferenceTestcase(CalendarAPITestCase):
     }
 
     def test_user_can_create_events(self):
-        # Log in user
-        url = reverse('calendar:token_obtain_pair')
-        response = self.client.post(
-            url, {'username': 'nobody',  'password': 'nobody'}, format='json')
-        access = response.data['access']
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access)
-
         url = reverse('calendar:calendar')
 
         # With the location set
@@ -58,13 +55,9 @@ class ConferenceTestcase(CalendarAPITestCase):
             self.valid_event_data_without_location['event_name'])
 
     def test_user_can_search_events(self):
-        # Log in user
-        url = reverse('calendar:token_obtain_pair')
-        response = self.client.post(
-            url, {'username': 'nobody',  'password': 'nobody'}, format='json')
-        access = response.data['access']
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access)
-
+        """
+        User can search through events in their company
+        """
         url = reverse('calendar:calendar')
 
         # create calendar event
@@ -75,7 +68,12 @@ class ConferenceTestcase(CalendarAPITestCase):
             response.data['event_name'],
             self.valid_event_data_without_location['event_name'])
 
+        user = User.objects.get(username='nobody')
         search_url = url + '?search=Management'
         response = self.client.get(search_url)
+
+        # Any part of the list would have the query among
+        data = response.data[0]
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]['event_name'], 'Management')
+        self.assertEqual(data['event_name'], 'Management')
+        self.assertEqual(data['company_i'], user.company_i.name)
