@@ -42,3 +42,4 @@ valid_conference_data = {
 4. The concept of company tenancy is made abstract to user
 5. No user management api 
 6. Choice of time zones is restricted to common time zone
+7. Populatin a user's timezone would be doone by the administrator
